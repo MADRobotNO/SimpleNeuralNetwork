@@ -40,9 +40,15 @@ class Model:
         self.print_details(self.output_layer)
         return self.output_layer
 
-    def test_model(self, input_data, targets):
+    def test_model(self, input_data, targets, debug=False):
+        if debug:
+            self.debug = True
         self.print_string_with_star_lines("### --- Test initialized --- ###")
-        for data_set in self.input_data:
+        self.feed_data_to_input_layer(input_data)
+
+        total_accuracy = 0
+
+        for index_data_set, data_set in enumerate(self.input_data):
 
             if self.debug:
                 print("Data row", data_set)
@@ -77,7 +83,7 @@ class Model:
                 node.set_input_data(hidden_outputs)
                 output = node.generate_output_data()
                 outputs.append(output)
-                error = targets[i] - output
+                error = targets[index_data_set] - output
                 node.set_error(error)
                 if self.debug:
                     print("Node", count_nodes)
@@ -85,17 +91,25 @@ class Model:
                     print("Weights:", node.weights)
                     print("Bias:", node.bias)
                     print("Output:", output)
-                    print("Target:", targets[i])
+                    print("Target:", targets[index_data_set])
                     print("Output error:", error)
                     print()
                 count_nodes += 1
                 output_errors.append(error)
 
-            print("Data row", data_set)
-            print("Outputs for output layer:", outputs, "with correct answer", targets)
+            if self.debug:
+                print("Outputs for output layer:", outputs, "with correct answer", targets[index_data_set])
+            total_error_for_output = 0
             for output_error in output_errors:
-                print("Accuracy", (1-abs(output_error))*100, "%")
-            print()
+                total_error_for_output += abs(output_error)
+            total_error_for_output = total_error_for_output/len(output_errors)
+            total_accuracy_for_output = (1-total_error_for_output)
+            print(f"Accuracy for dataset #{index_data_set} is", round(total_accuracy_for_output * 100, 2),
+                  "% and the error was", round(total_error_for_output * 100, 2), "%")
+            total_accuracy += total_accuracy_for_output
+
+        total_accuracy = total_accuracy/len(input_data)
+        print("\nTotal accuracy for test:", round(total_accuracy*100, 2), "%\n")
 
     def train_model(self, input_data, targets, number_of_epochs=1, learning_rate=0.1):
         self.feed_data_to_input_layer(input_data)
@@ -339,9 +353,13 @@ class Model:
             output_bias.append(copy.copy(self.output_layer[i].bias))
         return output_bias
 
-    def feedforward(self):
+    def feedforward(self, input_data, debug=False):
         self.print_string_with_star_lines("### --- Feed forward initialized --- ###")
 
+        self.feed_data_to_input_layer(input_data)
+
+        if debug:
+            self.debug = True
         for data_set in self.input_data:
 
             if self.debug:
