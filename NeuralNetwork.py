@@ -121,19 +121,19 @@ class Model:
                 output_errors = []
 
                 if self.debug:
-                    print("Data row", count_data_rows)
+                    print("Data row:", count_data_rows)
                     print("\n***Hidden layer***\n")
 
                 for node in self.hidden_layer:
                     node.set_input_data(data_set)
-                    output = node.generate_output_data()
-                    hidden_outputs.append(output)
-
                     if self.debug:
                         print("Node", count_nodes)
                         print("Node input data:", node.input_data)
                         print("Weights:", node.weights)
                         print("Bias:", node.bias)
+                    output = node.generate_output_data()
+                    hidden_outputs.append(output)
+                    if self.debug:
                         print("Output:", output)
                         print()
 
@@ -147,15 +147,16 @@ class Model:
 
                 for i, node in enumerate(self.output_layer):
                     node.set_input_data(hidden_outputs)
-                    output = node.generate_output_data()
-                    outputs.append(output)
-                    error = targets[input_row_index]-output
-                    node.set_error(error)
                     if self.debug:
                         print("Node", count_nodes)
                         print("Node input data:", node.input_data)
                         print("Weights:", node.weights)
                         print("Bias:", node.bias)
+                    output = node.generate_output_data()
+                    outputs.append(output)
+                    error = targets[input_row_index]-output
+                    node.set_error(error)
+                    if self.debug:
                         print("Output:", output)
                         print("Target:", targets[input_row_index])
                         print("Output error:", error)
@@ -186,7 +187,9 @@ class Model:
                   "accuracy", "{:.2f}".format(epoch_accuracy), "%")
 
             # shuffle input data
-            random.shuffle(self.input_data)
+            total_data = list(zip(self.input_data, targets))
+            random.shuffle(total_data)
+            self.input_data, targets = zip(*total_data)
 
         print("Number of trainings:", count_trainings)
         print("Max accuracy:", "{:.2f}".format(max_accuracy), "%")
@@ -199,13 +202,18 @@ class Model:
         output_weights = self.output_weights()
         output_bias = self.output_bias()
 
+        if self.debug:
+            print("*** Backpropagation starts ***\n")
+            print("Inputs:", inputs)
+            print("Hidden outputs:", hidden_outputs)
+            print("Outputs", outputs)
+            print("Output errors:", output_errors)
+
         hidden_errors = self.calculate_hidden_error(output_errors, output_weights)
 
         if self.debug:
-            print("*** Backpropagation starts ***")
-            print("Learning rate:", learning_rate)
-            print("Output errors:", output_errors)
             print("Hidden errors:", hidden_errors)
+            print("Learning rate:", learning_rate)
             print()
             print("Output layer\n")
 
@@ -261,6 +269,8 @@ class Model:
                 print()
 
     def calculate_hidden_error(self, output_errors, output_weights):
+        if self.debug:
+            print("Calculating hidden errors:")
         hidden_errors = []
         for i, node in enumerate(self.hidden_layer):
             error = 0
@@ -378,6 +388,9 @@ class Model:
             print("Data row", data_set)
             print("Outputs for output layer:", outputs)
             print()
+
+    def randomize_factor(self):
+        return random.random()
 
     def print_details(self, data):
         if self.debug:

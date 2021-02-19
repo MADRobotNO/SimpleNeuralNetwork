@@ -39,15 +39,15 @@ class Node:
         self.input_sum_with_bias = 0.0
         sum_string = ""
         for i in range(len(self.input_data)):
-            sum_string += "{:.20f}".format((self.input_data[i] * self.weights[i])) + " (I.{0} ".format(i) \
-                          + "{:.20f}".format(self.input_data[i]) + " * W.{0} ".format(i) \
+            sum_string += "{:.20f}".format((self.input_data[i] * self.weights[i])) + " (Input{0} ".format(i) \
+                          + "{:.20f}".format(self.input_data[i]) + " * Weight{0} ".format(i) \
                           + "{:.20f}".format(self.weights[i]) + ") + "
             self.input_sum_with_bias += (self.input_data[i] * self.weights[i])
-        sum_string += "B {:.20f}".format(self.bias)
+        sum_string += "Bias {:.20f}".format(self.bias)
         self.input_sum_with_bias += self.bias
         if self.debug:
             print("Calculating sum:", sum_string)
-            print("calculated input sum:", self.input_sum_with_bias)
+            print("Calculated sum:", self.input_sum_with_bias)
 
     def sigmoid(self, value):
         return 1 / (1 + math.exp(-value))
