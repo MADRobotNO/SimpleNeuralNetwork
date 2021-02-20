@@ -111,7 +111,7 @@ class Model:
         total_accuracy = total_accuracy/len(input_data)
         print("\nTotal accuracy for test:", round(total_accuracy*100, 2), "%\n")
 
-    def train_model(self, input_data, targets, number_of_epochs=1, learning_rate=0.1):
+    def train_model(self, input_data, targets, number_of_epochs=1, learning_rate=0.1, data_shuffle=False):
         self.feed_data_to_input_layer(input_data)
 
         self.print_string_with_star_lines("### --- Training initialized --- ###")
@@ -201,9 +201,10 @@ class Model:
                   "accuracy", "{:.2f}".format(epoch_accuracy), "%")
 
             # shuffle input data
-            total_data = list(zip(self.input_data, targets))
-            random.shuffle(total_data)
-            self.input_data, targets = zip(*total_data)
+            if data_shuffle:
+                total_data = list(zip(self.input_data, targets))
+                random.shuffle(total_data)
+                self.input_data, targets = zip(*total_data)
 
         print("Number of trainings:", count_trainings)
         print("Max accuracy:", "{:.2f}".format(max_accuracy), "%")

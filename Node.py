@@ -1,4 +1,4 @@
-import math
+import numpy as np
 import random
 
 
@@ -50,7 +50,7 @@ class Node:
             print("Calculated sum:", self.input_sum_with_bias)
 
     def sigmoid(self, value):
-        return 1 / (1 + math.exp(-value))
+        return 1 / (1 + np.exp(-value))
 
     def generate_output_data(self):
         self.calculate_input_sum()
