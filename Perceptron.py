@@ -2,7 +2,7 @@ import numpy as np
 import random
 
 
-class Node:
+class Perceptron:
 
     bias = 0.0
     input_data = None

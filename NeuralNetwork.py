@@ -1,22 +1,26 @@
-from Node import Node
+from Perceptron import Perceptron
 import copy
 import random
+import csv
+import datetime
 
 
 class Model:
 
     debug = False
+    number_of_hidden_layers = 1
     input_data = []
-    hidden_layer = []
+    hidden_layers = []
     output_layer = []
 
-    def __init__(self, size_of_input_layer, size_of_hidden_layer, size_of_output_layer, debug=False):
+    def __init__(self, size_of_input_layer, size_of_hidden_layer, size_of_output_layer, number_of_hidden_layers=1, debug=False):
         self.print_string_with_star_lines("### --- Initializing neural network --- ###")
         self.size_of_input_layer = size_of_input_layer
         self.size_of_hidden_layer = size_of_hidden_layer
         self.size_of_output_layer = size_of_output_layer
+        self.number_of_hidden_layers = number_of_hidden_layers
         self.debug = debug
-        self.initialize_hidden_layer()
+        self.initialize_hidden_layers()
         self.initialize_output_layer()
         self.print_string_with_star_lines("### --- Neural network layers initialized --- ###")
 
@@ -26,92 +30,135 @@ class Model:
         self.print_details(self.input_data)
         return self.input_data
 
-    def initialize_hidden_layer(self):
-        for i in range(self.size_of_hidden_layer):
-            self.hidden_layer.append(Node(self.size_of_input_layer, self.debug))
-        self.print_string_with_star_lines("Hidden layer initialized with {0} nodes".format(self.size_of_hidden_layer))
-        self.print_details(self.hidden_layer)
-        return self.hidden_layer
+    def initialize_hidden_layers(self):
+        for layer in range(self.number_of_hidden_layers):
+            hidden_layer = []
+            for i in range(self.size_of_hidden_layer):
+                if layer == 0:
+                    hidden_layer.append(Perceptron(self.size_of_input_layer, self.debug))
+                else:
+                    hidden_layer.append(Perceptron(self.size_of_hidden_layer, self.debug))
+            self.print_string_with_star_lines("Hidden layer initialized with {0} nodes".format(len(hidden_layer)))
+            self.print_details(hidden_layer)
+            self.hidden_layers.append(hidden_layer)
+        return self.hidden_layers
 
     def initialize_output_layer(self):
         for i in range(self.size_of_output_layer):
-            self.output_layer.append(Node(self.size_of_hidden_layer, self.debug))
+            self.output_layer.append(Perceptron(self.size_of_hidden_layer, self.debug))
         self.print_string_with_star_lines("Output layer initialized with {0} nodes".format(self.size_of_output_layer))
         self.print_details(self.output_layer)
         return self.output_layer
 
-    def test_model(self, input_data, targets, debug=False):
+    def test_model(self, input_data, targets, debug=False, log=False):
         if debug:
             self.debug = True
         self.print_string_with_star_lines("### --- Test initialized --- ###")
         self.feed_data_to_input_layer(input_data)
-
         total_accuracy = 0
 
-        for index_data_set, data_set in enumerate(self.input_data):
+        filename = "log_test.csv"
+        if log:
+            now_date = datetime.datetime.now()
+            now_date = now_date.strftime("%d-%m-%Y_%H-%M-%S")
+            filename = "log_test_" + now_date + ".csv"
+            with open(filename, mode='w', newline="") as log_file:
+                data_writer = csv.writer(log_file, delimiter=',')
+                row = ["Start test", now_date]
+                data_writer.writerow(row)
 
-            if self.debug:
-                print("Data row", data_set)
-                print("\n***Hidden layer***\n")
+
+        for input_row_index, data_set in enumerate(self.input_data):
 
             hidden_outputs = []
             outputs = []
-            count_nodes = 0
             output_errors = []
 
-            for node in self.hidden_layer:
-                node.set_input_data(data_set)
-                output = node.generate_output_data()
-                hidden_outputs.append(output)
+            if self.debug:
+                print("Data row:", input_row_index, "Data:", data_set)
+                print("\n***Hidden layer***\n")
+
+            for layer_index, layer in enumerate(self.hidden_layers):
+                layer_hidden_outputs = []
+
+                for node_index, node in enumerate(layer):
+
+                    if layer_index == 0:
+                        node.set_input_data(data_set)
+                    else:
+                        node.set_input_data(hidden_outputs[layer_index - 1])
+
+                    if self.debug:
+                        print("Node", node_index)
+                        print("Node input data:", node.input_data)
+                        print("Weights:", node.weights)
+                        print("Bias:", node.bias)
+                    output = node.generate_output_data()
+                    layer_hidden_outputs.append(output)
+                    if self.debug:
+                        print("Output:", output)
+                        print()
+
+                hidden_outputs.append(layer_hidden_outputs)
 
                 if self.debug:
-                    print("Node", count_nodes)
+                    print("Hidden outputs:", hidden_outputs)
+                    print("\n***Output layer***\n")
+
+            for node_index, node in enumerate(self.output_layer):
+                node.set_input_data(hidden_outputs[self.number_of_hidden_layers - 1])
+                if self.debug:
+                    print("Node", node_index)
                     print("Node input data:", node.input_data)
                     print("Weights:", node.weights)
                     print("Bias:", node.bias)
-                    print("Output:", output)
-                    print()
-
-                count_nodes += 1
-
-            if self.debug:
-                print("\n***Output layer***\n")
-
-            count_nodes = 0  # reset counter
-
-            for i, node in enumerate(self.output_layer):
-                node.set_input_data(hidden_outputs)
                 output = node.generate_output_data()
                 outputs.append(output)
-                error = targets[index_data_set] - output
+                error = targets[input_row_index] - output
                 node.set_error(error)
                 if self.debug:
-                    print("Node", count_nodes)
-                    print("Node input data:", node.input_data)
-                    print("Weights:", node.weights)
-                    print("Bias:", node.bias)
                     print("Output:", output)
-                    print("Target:", targets[index_data_set])
+                    print("Target:", targets[input_row_index])
                     print("Output error:", error)
                     print()
-                count_nodes += 1
                 output_errors.append(error)
 
             if self.debug:
-                print("Outputs for output layer:", outputs, "with correct answer", targets[index_data_set])
+                print("Outputs for output layer:", outputs)
+                print("All errors for data row", output_errors)
+                print()
+
+            if self.debug:
+                print("Outputs for output layer:", outputs, "with correct answer", targets[input_row_index])
             total_error_for_output = 0
             for output_error in output_errors:
                 total_error_for_output += abs(output_error)
-            total_error_for_output = total_error_for_output/len(output_errors)
-            total_accuracy_for_output = (1-total_error_for_output)
-            print(f"Accuracy for dataset #{index_data_set} is", round(total_accuracy_for_output * 100, 2),
+            total_error_for_output = total_error_for_output / len(output_errors)
+            total_accuracy_for_output = (1 - total_error_for_output)
+            print(f"Accuracy for dataset #{input_row_index} is", round(total_accuracy_for_output * 100, 2),
                   "% and the error was", round(total_error_for_output * 100, 2), "%")
+            if log:
+                with open(filename, mode='a+', newline="") as log_file:
+                    data_writer = csv.writer(log_file, delimiter=',')
+                    row = [f"Accuracy for dataset is", round(total_accuracy_for_output * 100, 2),
+                           "Error was", round(total_error_for_output * 100, 2)]
+                    data_writer.writerow(row)
             total_accuracy += total_accuracy_for_output
 
         total_accuracy = total_accuracy/len(input_data)
         print("\nTotal accuracy for test:", round(total_accuracy*100, 2), "%\n")
 
-    def train_model(self, input_data, targets, number_of_epochs=1, learning_rate=0.1, data_shuffle=False):
+        if log:
+            now_date = datetime.datetime.now()
+            now_date = now_date.strftime("%d-%m-%Y_%H-%M-%S")
+            with open(filename, mode='a+', newline="") as log_file:
+                data_writer = csv.writer(log_file, delimiter=',')
+                row = ["End test", now_date]
+                data_writer.writerow(row)
+                row = ["Total accuracy for test:", round(total_accuracy*100, 2)]
+                data_writer.writerow(row)
+
+    def train_model(self, input_data, targets, number_of_epochs=1, learning_rate=0.1, data_shuffle=False, log=False):
         self.feed_data_to_input_layer(input_data)
 
         self.print_string_with_star_lines("### --- Training initialized --- ###")
@@ -121,7 +168,20 @@ class Model:
 
         max_accuracy = 0
         count_trainings = 0
-
+        filename = "log_training.csv"
+        if log:
+            now_date = datetime.datetime.now()
+            now_date = now_date.strftime("%d-%m-%Y_%H-%M-%S")
+            filename = "log_training_" + now_date + ".csv"
+            with open(filename, mode='w', newline="") as log_file:
+                data_writer = csv.writer(log_file, delimiter=',')
+                row = ["Start training", now_date]
+                data_writer.writerow(row)
+                row = ["Model settings:", "LR", learning_rate, "Numb.of.epochs", number_of_epochs,
+                       "Numb.of hidden layers", self.number_of_hidden_layers, "Size of hidden layers",
+                       self.size_of_hidden_layer, "Size of training data", len(self.input_data), "Data shuffle",
+                       data_shuffle]
+                data_writer.writerow(row)
         for epoch in range(1, number_of_epochs + 1):
             if self.debug:
                 print("Epoch:", epoch)
@@ -129,40 +189,44 @@ class Model:
             epoch_error_rate = 0
 
             for input_row_index, data_set in enumerate(self.input_data):
-                count_nodes = 0  # only for debugging and printing, not used in calculations
                 hidden_outputs = []
                 outputs = []
                 output_errors = []
 
                 if self.debug:
-                    print("Data row:", count_data_rows)
+                    print("Data row:", input_row_index)
                     print("\n***Hidden layer***\n")
 
-                for node in self.hidden_layer:
-                    node.set_input_data(data_set)
+                for layer_index, layer in enumerate(self.hidden_layers):
+                    layer_hidden_outputs = []
+                    for node_index, node in enumerate(layer):
+
+                        if layer_index == 0:
+                            node.set_input_data(data_set)
+                        else:
+                            node.set_input_data(hidden_outputs[layer_index-1])
+
+                        if self.debug:
+                            print("Node", node_index)
+                            print("Node input data:", node.input_data)
+                            print("Weights:", node.weights)
+                            print("Bias:", node.bias)
+                        output = node.generate_output_data()
+                        layer_hidden_outputs.append(output)
+                        if self.debug:
+                            print("Output:", output)
+                            print()
+
+                    hidden_outputs.append(layer_hidden_outputs)
+
                     if self.debug:
-                        print("Node", count_nodes)
-                        print("Node input data:", node.input_data)
-                        print("Weights:", node.weights)
-                        print("Bias:", node.bias)
-                    output = node.generate_output_data()
-                    hidden_outputs.append(output)
+                        print("Hidden outputs:", hidden_outputs)
+                        print("\n***Output layer***\n")
+
+                for node_index, node in enumerate(self.output_layer):
+                    node.set_input_data(hidden_outputs[self.number_of_hidden_layers-1])
                     if self.debug:
-                        print("Output:", output)
-                        print()
-
-                    count_nodes += 1
-
-                if self.debug:
-                    print("Hidden outputs:", hidden_outputs)
-                    print("\n***Output layer***\n")
-
-                count_nodes = 0  # reset counter
-
-                for i, node in enumerate(self.output_layer):
-                    node.set_input_data(hidden_outputs)
-                    if self.debug:
-                        print("Node", count_nodes)
+                        print("Node", node_index)
                         print("Node input data:", node.input_data)
                         print("Weights:", node.weights)
                         print("Bias:", node.bias)
@@ -175,7 +239,6 @@ class Model:
                         print("Target:", targets[input_row_index])
                         print("Output error:", error)
                         print()
-                    count_nodes += 1
                     output_errors.append(error)
 
                 if self.debug:
@@ -198,7 +261,12 @@ class Model:
             if epoch_accuracy > max_accuracy:
                 max_accuracy = epoch_accuracy
             print("Epoch {0} error rate:".format(epoch), "{:.16f}".format(epoch_error_rate),
-                  "accuracy", "{:.2f}".format(epoch_accuracy), "%")
+                  "accuracy", "{:.2f}".format(epoch_accuracy), "%", " - Current max accuracy:", "{:.2f} %".format(max_accuracy))
+            if log:
+                with open(filename, mode='a+', newline="") as log_file:
+                    data_writer = csv.writer(log_file, delimiter=',')
+                    row = [epoch, "{:.2f}".format(epoch_accuracy), "{:.2f}".format(max_accuracy)]
+                    data_writer.writerow(row)
 
             # shuffle input data
             if data_shuffle:
@@ -207,7 +275,18 @@ class Model:
                 self.input_data, targets = zip(*total_data)
 
         print("Number of trainings:", count_trainings)
-        print("Max accuracy:", "{:.2f}".format(max_accuracy), "%")
+        print("Max accuracy:", "{:.2f} %".format(max_accuracy))
+        if log:
+            now_date = datetime.datetime.now()
+            now_date = now_date.strftime("%d-%m-%Y_%H-%M-%S")
+            with open(filename, mode='a+', newline="") as log_file:
+                data_writer = csv.writer(log_file, delimiter=',')
+                row = ["End training", now_date]
+                data_writer.writerow(row)
+                row = ["Number of trainings:", count_trainings]
+                data_writer.writerow(row)
+                row = ["Max accuracy:", "{:.2f} %".format(max_accuracy)]
+                data_writer.writerow(row)
 
     def backpropagation(self, inputs, hidden_outputs, outputs, output_errors, learning_rate):
 
@@ -221,10 +300,11 @@ class Model:
             print("*** Backpropagation starts ***\n")
             print("Inputs:", inputs)
             print("Hidden outputs:", hidden_outputs)
+            print("Hidden weights:", hidden_weights)
             print("Outputs", outputs)
             print("Output errors:", output_errors)
 
-        hidden_errors = self.calculate_hidden_error(output_errors, output_weights)
+        hidden_errors = self.calculate_hidden_errors(output_errors, output_weights, hidden_weights, hidden_outputs)
 
         if self.debug:
             print("Hidden errors:", hidden_errors)
@@ -238,7 +318,7 @@ class Model:
         for i, output_error in enumerate(output_errors):
             gradient = self.calculate_gradient(output_error, outputs[i], learning_rate)
             bias_update_values.append(gradient)
-            weight_update_values.append(self.calculate_weights_update_value(gradient, hidden_outputs))
+            weight_update_values.append(self.calculate_weights_update_value(gradient, hidden_outputs[self.number_of_hidden_layers-1]))
 
         if self.debug:
             print("Calculated update values for weights:", weight_update_values)
@@ -256,44 +336,65 @@ class Model:
                 print("Updated bias:", "{:.20f}".format(node.bias))
                 print()
 
-        if self.debug:
-            print("Hidden layer\n")
-
-        weight_update_values = []
-        bias_update_values = []
-
-        for i, hidden_error in enumerate(hidden_errors):
-            gradient = self.calculate_gradient(hidden_error, hidden_outputs[i], learning_rate)
-            bias_update_values.append(gradient)
-            weight_update_values.append(self.calculate_weights_update_value(gradient, inputs))
-
-        if self.debug:
-            print("Calculated update values for weights:", weight_update_values)
-            print("Calculated update values for bias:", bias_update_values)
-
-        for i, node in enumerate(self.hidden_layer):
-            node.update_weights_with_error(weight_update_values[i])
-            node.update_bias_with_error(bias_update_values[i])
+        for layer_index in range(self.number_of_hidden_layers):
+            last_layer = self.number_of_hidden_layers-1-layer_index
             if self.debug:
-                print("Node {0}".format(i))
-                print("Update values for weights:", weight_update_values[i])
-                print("Old weights:", hidden_weights[i])
-                print("Updated weights:", node.weights_to_print())
-                print("Old bias:", hidden_bias[i])
-                print("Updated bias:", "{:.20f}".format(node.bias))
-                print()
+                print("Hidden layer", last_layer)
 
-    def calculate_hidden_error(self, output_errors, output_weights):
+            weight_update_values = []
+            bias_update_values = []
+
+            for i, hidden_error in enumerate(hidden_errors[last_layer]):
+                gradient = self.calculate_gradient(hidden_error, hidden_outputs[last_layer][i], learning_rate)
+                bias_update_values.append(gradient)
+                if last_layer == 0:
+                    weight_update_values.append(self.calculate_weights_update_value(gradient, inputs))
+                else:
+                    weight_update_values.append(self.calculate_weights_update_value(gradient, hidden_outputs[last_layer]))
+
+            if self.debug:
+                print("Calculated update values for weights:", weight_update_values)
+                print("Calculated update values for bias:", bias_update_values)
+
+            for i, node in enumerate(self.hidden_layers[last_layer]):
+                node.update_weights_with_error(weight_update_values[i])
+                node.update_bias_with_error(bias_update_values[i])
+                if self.debug:
+                    print("Node {0}".format(i))
+                    print("Update values for weights:", weight_update_values[i])
+                    print("Old weights:", hidden_weights[last_layer][i])
+                    print("Updated weights:", node.weights_to_print())
+                    print("Old bias:", hidden_bias[last_layer][i])
+                    print("Updated bias:", "{:.20f}".format(node.bias))
+                    print()
+
+    def calculate_hidden_errors(self, output_errors, output_weights, hidden_weights, hidden_outputs):
         if self.debug:
             print("Calculating hidden errors:")
+            print("Output errors:", output_errors, "output weights", output_weights)
         hidden_errors = []
-        for i, node in enumerate(self.hidden_layer):
-            error = 0
-            for j, output_error in enumerate(output_errors):
-                error += output_error * output_weights[j][i]
-            node.set_error(error)
-            hidden_errors.append(error)
-        return hidden_errors
+        for layer_index in range(self.number_of_hidden_layers):
+            hidden_layer_errors = []
+            for i, node in enumerate(self.hidden_layers[self.number_of_hidden_layers-layer_index-1]):
+                error = 0
+                if layer_index == 0:
+                    for j, output_error in enumerate(output_errors):
+                        error += output_error * output_weights[j][i]
+                else:
+                    for j, hidden_error in enumerate(hidden_errors[layer_index-1]):
+                        error += hidden_error * hidden_weights[self.number_of_hidden_layers-layer_index][j][i]
+                node.set_error(error)
+                hidden_layer_errors.append(error)
+            hidden_errors.append(hidden_layer_errors)
+            if self.debug:
+                print("Hidden errors for hidden layer", self.number_of_hidden_layers-layer_index-1, ":", hidden_errors[layer_index])
+
+        # rearrange array so that it is arranged same way
+        hidden_errors_rearanged = []
+        for layer_index in range(len(hidden_errors)):
+            hidden_errors_rearanged.append(hidden_errors[len(hidden_errors)-layer_index-1])
+
+        return hidden_errors_rearanged
 
     def calculate_gradient(self, output_error, output, learning_rate):
         """
@@ -332,8 +433,11 @@ class Model:
 
     def hidden_weights(self):
         hidden_weights = []
-        for i, node in enumerate(self.hidden_layer):
-            hidden_weights.append(copy.copy(self.hidden_layer[i].weights))
+        for layer in self.hidden_layers:
+            hidden_layer_weights = []
+            for i, node in enumerate(layer):
+                hidden_layer_weights.append(copy.copy(layer[i].weights))
+            hidden_weights.append(hidden_layer_weights)
         return hidden_weights
 
     def output_weights(self):
@@ -344,8 +448,11 @@ class Model:
 
     def hidden_bias(self):
         hidden_bias = []
-        for i, node in enumerate(self.hidden_layer):
-            hidden_bias.append(copy.copy(self.hidden_layer[i].bias))
+        for layer in self.hidden_layers:
+            hidden_layer_bias = []
+            for i, node in enumerate(layer):
+                hidden_layer_bias.append(copy.copy(layer[i].bias))
+            hidden_bias.append(hidden_layer_bias)
         return hidden_bias
 
     def output_bias(self):
@@ -354,68 +461,93 @@ class Model:
             output_bias.append(copy.copy(self.output_layer[i].bias))
         return output_bias
 
-    def feedforward(self, input_data, debug=False):
-        self.print_string_with_star_lines("### --- Feed forward initialized --- ###")
-
-        self.feed_data_to_input_layer(input_data)
+    def feedforward(self, input_data, debug=False, log=False):
 
         if debug:
             self.debug = True
-        for data_set in self.input_data:
+        self.print_string_with_star_lines("### --- Feed forward initialized --- ###")
+        self.feed_data_to_input_layer(input_data)
 
-            if self.debug:
-                print("Data row", data_set)
-                print("\n***Hidden layer***\n")
+        filename = "log_feedforward.csv"
+        if log:
+            now_date = datetime.datetime.now()
+            now_date = now_date.strftime("%d-%m-%Y_%H-%M-%S")
+            filename = "log_feedforward_" + now_date + ".csv"
+            with open(filename, mode='w', newline="") as log_file:
+                data_writer = csv.writer(log_file, delimiter=',')
+                row = ["Start feedforward", now_date]
+                data_writer.writerow(row)
+
+        for input_row_index, data_set in enumerate(self.input_data):
 
             hidden_outputs = []
             outputs = []
-            count_nodes = 0
 
-            for node in self.hidden_layer:
-                node.set_input_data(data_set)
-                output = node.generate_output_data()
-                hidden_outputs.append(output)
+            if self.debug:
+                print("Data row:", input_row_index, "Data:", data_set)
+                print("\n***Hidden layer***\n")
+
+            for layer_index, layer in enumerate(self.hidden_layers):
+                layer_hidden_outputs = []
+
+                for node_index, node in enumerate(layer):
+
+                    if layer_index == 0:
+                        node.set_input_data(data_set)
+                    else:
+                        node.set_input_data(hidden_outputs[layer_index - 1])
+
+                    if self.debug:
+                        print("Node", node_index)
+                        print("Node input data:", node.input_data)
+                        print("Weights:", node.weights)
+                        print("Bias:", node.bias)
+                    output = node.generate_output_data()
+                    layer_hidden_outputs.append(output)
+                    if self.debug:
+                        print("Output:", output)
+                        print()
+
+                hidden_outputs.append(layer_hidden_outputs)
 
                 if self.debug:
-                    print("Node", count_nodes)
+                    print("Hidden outputs:", hidden_outputs)
+                    print("\n***Output layer***\n")
+
+            for node_index, node in enumerate(self.output_layer):
+                node.set_input_data(hidden_outputs[self.number_of_hidden_layers - 1])
+                if self.debug:
+                    print("Node", node_index)
                     print("Node input data:", node.input_data)
                     print("Weights:", node.weights)
                     print("Bias:", node.bias)
-                    print("Output:", output)
-                    print()
-
-                count_nodes += 1
-
-            if self.debug:
-                print("\n***Output layer***\n")
-
-            count_nodes = 0  # reset counter
-
-            for i, node in enumerate(self.output_layer):
-                node.set_input_data(hidden_outputs)
                 output = node.generate_output_data()
                 outputs.append(output)
                 if self.debug:
-                    print("Node", count_nodes)
-                    print("Node input data:", node.input_data)
-                    print("Weights:", node.weights)
-                    print("Bias:", node.bias)
                     print("Output:", output)
                     print()
-                count_nodes += 1
 
-            print("Data row", data_set)
-            print("Outputs for output layer:", outputs)
-            print()
+            print("Outputs", outputs, "for dataset", data_set)
+            if log:
+                with open(filename, mode='a+', newline="") as log_file:
+                    data_writer = csv.writer(log_file, delimiter=',')
+                    row = [data_set, outputs]
+                    data_writer.writerow(row)
 
-    def randomize_factor(self):
-        return random.random()
+        print()
+        if log:
+            now_date = datetime.datetime.now()
+            now_date = now_date.strftime("%d-%m-%Y_%H-%M-%S")
+            with open(filename, mode='a+', newline="") as log_file:
+                data_writer = csv.writer(log_file, delimiter=',')
+                row = ["End feedforward", now_date]
+                data_writer.writerow(row)
 
     def print_details(self, data):
         if self.debug:
             count = 0
             for element in data:
-                if isinstance(element, Node):
+                if isinstance(element, Perceptron):
                     print("Node:", count)
                     print("Weights:", element.weights)
                     print("Bias:", element.bias)
