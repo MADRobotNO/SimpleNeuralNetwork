@@ -5,9 +5,10 @@ Requires:
 numpy
 
 Not supported:
-1. It is not possible to have different sizes for different hidden layers.
+1. It is not possible to have different sizes for different hidden layers
 2. There is only one activation function - sigmoid
 3. It is not possible to have different activation functions on different layers
+4. Not possible to save or load models
 
 Neural Networ creates an input layer, hidden layers and output layer. 
 
