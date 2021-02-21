@@ -1,6 +1,16 @@
 import random
 
 
+class Xor:
+    def __init__(self):
+        self.data = [[0,1], [1,0], [1,1], [0,0]]
+        self.targets = [1,1,0,0]
+
+    def getRandomXorData(self):
+        random_number = random.randint(0, 4)
+        return self.data[random_number]
+
+
 class HumanRandomData:
     """
     Random data gets size of data as parameter 1
@@ -14,10 +24,10 @@ class HumanRandomData:
     training = False
     debug = False
 
-    def __init__(self, data_size, debug=False):
+    def __init__(self, data_size, double_target=False, debug=False):
         self.data_size = data_size
         self.debug = debug
-
+        self.double_target = double_target
         self.data = []
         self.targets = []
 
@@ -46,7 +56,11 @@ class HumanRandomData:
                 data_row = self.make_other_data()
                 while self.check_if_human(data_row[0]):
                     data_row = self.make_other_data()
-                self.targets.append(data_row[1])
+                if self.double_target:
+                    target_row = [data_row[1], data_row[1]*-1]
+                    self.targets.append(target_row)
+                else:
+                    self.targets.append(data_row[1])
                 self.data.append(data_row[0])
 
 
