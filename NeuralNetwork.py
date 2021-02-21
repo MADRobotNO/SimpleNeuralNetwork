@@ -158,7 +158,9 @@ class Model:
                 row = ["Total accuracy for test:", round(total_accuracy*100, 2)]
                 data_writer.writerow(row)
 
-    def train_model(self, input_data, targets, number_of_epochs=1, learning_rate=0.1, data_shuffle=False, log=False):
+    def train_model(self, input_data, targets, number_of_epochs=1, learning_rate=0.1, data_shuffle=False, debug=False, log=False):
+        if debug:
+            self.debug = True
         self.feed_data_to_input_layer(input_data)
 
         self.print_string_with_star_lines("### --- Training initialized --- ###")
