@@ -1,4 +1,4 @@
-from Node import Node
+from Perceptron import Perceptron
 import copy
 import random
 import csv
@@ -35,9 +35,9 @@ class Model:
             hidden_layer = []
             for i in range(self.size_of_hidden_layer):
                 if layer == 0:
-                    hidden_layer.append(Node(self.size_of_input_layer, self.debug))
+                    hidden_layer.append(Perceptron(self.size_of_input_layer, self.debug))
                 else:
-                    hidden_layer.append(Node(self.size_of_hidden_layer, self.debug))
+                    hidden_layer.append(Perceptron(self.size_of_hidden_layer, self.debug))
             self.print_string_with_star_lines("Hidden layer initialized with {0} nodes".format(len(hidden_layer)))
             self.print_details(hidden_layer)
             self.hidden_layers.append(hidden_layer)
@@ -45,7 +45,7 @@ class Model:
 
     def initialize_output_layer(self):
         for i in range(self.size_of_output_layer):
-            self.output_layer.append(Node(self.size_of_hidden_layer, self.debug))
+            self.output_layer.append(Perceptron(self.size_of_hidden_layer, self.debug))
         self.print_string_with_star_lines("Output layer initialized with {0} nodes".format(self.size_of_output_layer))
         self.print_details(self.output_layer)
         return self.output_layer
@@ -527,15 +527,14 @@ class Model:
                     print("Output:", output)
                     print()
 
-
             print("Outputs", outputs, "for dataset", data_set)
-            print()
-
             if log:
                 with open(filename, mode='a+', newline="") as log_file:
                     data_writer = csv.writer(log_file, delimiter=',')
                     row = [data_set, outputs]
                     data_writer.writerow(row)
+
+        print()
         if log:
             now_date = datetime.datetime.now()
             now_date = now_date.strftime("%d-%m-%Y_%H-%M-%S")
@@ -544,14 +543,11 @@ class Model:
                 row = ["End feedforward", now_date]
                 data_writer.writerow(row)
 
-    def randomize_factor(self):
-        return random.random()
-
     def print_details(self, data):
         if self.debug:
             count = 0
             for element in data:
-                if isinstance(element, Node):
+                if isinstance(element, Perceptron):
                     print("Node:", count)
                     print("Weights:", element.weights)
                     print("Bias:", element.bias)

@@ -24,7 +24,7 @@ class HumanRandomData:
     training = False
     debug = False
 
-    def __init__(self, data_size, double_target=False, debug=False):
+    def __init__(self, data_size, normalized=False, double_target=False, debug=False):
         self.data_size = data_size
         self.debug = debug
         self.double_target = double_target
@@ -32,6 +32,8 @@ class HumanRandomData:
         self.targets = []
 
         self.generate_data()
+        if normalized:
+            self.data = self.normalize_data(self.data)
         if self.debug:
             self.__str__()
 
@@ -147,7 +149,7 @@ class HumanRandomData:
             print()
 
     @staticmethod
-    def normalize_data(input_data):
+    def normalize_data(input_data, debug=False):
         for data_row in input_data:
 
             for i, data_element in enumerate(data_row):
@@ -166,4 +168,8 @@ class HumanRandomData:
                 # Max value is estimated to be 210
                 else:
                     data_row[i] = round((data_row[i]/210), 4)
+        if debug:
+            for i, element in enumerate(input_data):
+                print(element)
+            print()
         return input_data
