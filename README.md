@@ -15,8 +15,8 @@ Neural Networ creates an input layer, hidden layers and output layer.
 The constructor for Neural Network takes following parameters:  
 size_of_input_layer - number of input nodes (or simply size of one data row)  
 size_of_hidden_layer - number of hidden layer perceptrons  
-size_of_output_layer - number of output layer perceptrons
-number_of_hidden_layers=1 - number of hidden layers (default 1)
+size_of_output_layer - number of output layer perceptrons.  
+number_of_hidden_layers=1 - number of hidden layers (default 1).  
 debug=False - Boolean value to toggle debugging mode (extra information is printed in the console)  
   
 Possible functions:  
