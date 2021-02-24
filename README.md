@@ -8,10 +8,9 @@ Not supported:
 1. It is not possible to have different sizes for different hidden layers  
 2. There is only one activation function - sigmoid  
 3. It is not possible to have different activation functions on different layers  
-4. Only one target outpu supported  
-5. Not possible to save or load models  
+4. Only one target output supported
 
-Neural Networ creates an input layer, hidden layers and output layer. 
+Neural Network creates an input layer, hidden layers and output layer. 
 
 The constructor for Neural Network takes following parameters:  
 size_of_input_layer - number of input nodes (or simply size of one data row)  

@@ -64,7 +64,7 @@ class Perceptron:
             self.weights.append(round(self.generate_random_number(), 4))
 
     def set_weights(self, weights):
-        self.weights = weights
+        self.weights = list(weights)
 
     def set_bias(self, bias):
         self.bias = bias
