@@ -4,7 +4,6 @@ import random
 import csv
 import datetime
 
-
 class Model:
 
     debug = False
@@ -63,7 +62,7 @@ class Model:
             now_date = now_date.strftime("%d-%m-%Y_%H-%M-%S")
             filename = "log_test_" + now_date + ".csv"
             with open(filename, mode='w', newline="") as log_file:
-                data_writer = csv.writer(log_file, delimiter=',')
+                data_writer = csv.writer(log_file, delimiter=';')
                 row = ["Start test", now_date]
                 data_writer.writerow(row)
 
@@ -139,7 +138,7 @@ class Model:
                   "% and the error was", round(total_error_for_output * 100, 2), "%")
             if log:
                 with open(filename, mode='a+', newline="") as log_file:
-                    data_writer = csv.writer(log_file, delimiter=',')
+                    data_writer = csv.writer(log_file, delimiter=';')
                     row = [f"Accuracy for dataset is", round(total_accuracy_for_output * 100, 2),
                            "Error was", round(total_error_for_output * 100, 2)]
                     data_writer.writerow(row)
@@ -152,22 +151,28 @@ class Model:
             now_date = datetime.datetime.now()
             now_date = now_date.strftime("%d-%m-%Y_%H-%M-%S")
             with open(filename, mode='a+', newline="") as log_file:
-                data_writer = csv.writer(log_file, delimiter=',')
+                data_writer = csv.writer(log_file, delimiter=';')
                 row = ["End test", now_date]
                 data_writer.writerow(row)
                 row = ["Total accuracy for test:", round(total_accuracy*100, 2)]
                 data_writer.writerow(row)
 
-    def train_model(self, input_data, targets, number_of_epochs=1, learning_rate=0.1, data_shuffle=False, debug=False, log=False):
+    def train_model(self, input_data, targets, number_of_epochs=None, learning_rate=0.1, data_shuffle=False, debug=False, log=False, accuracy_target=None):
         if debug:
             self.debug = True
         self.feed_data_to_input_layer(input_data)
+
+        if accuracy_target and not number_of_epochs:
+            number_of_epochs = 99999999999999999999999999
+
+        self.best_result_model = []
+        self.trained_model = []
 
         self.print_string_with_star_lines("### --- Training initialized --- ###")
         print("Number of epochs:", number_of_epochs)
         print("Learning rate:", learning_rate)
         self.print_string_with_star_lines()
-
+        epoch_accuracy = 0
         max_accuracy = 0
         count_trainings = 0
         filename = "log_training.csv"
@@ -176,7 +181,7 @@ class Model:
             now_date = now_date.strftime("%d-%m-%Y_%H-%M-%S")
             filename = "log_training_" + now_date + ".csv"
             with open(filename, mode='w', newline="") as log_file:
-                data_writer = csv.writer(log_file, delimiter=',')
+                data_writer = csv.writer(log_file, delimiter=';')
                 row = ["Start training", now_date]
                 data_writer.writerow(row)
                 row = ["Model settings:", "LR", learning_rate, "Numb.of.epochs", number_of_epochs,
@@ -184,7 +189,7 @@ class Model:
                        self.size_of_hidden_layer, "Size of training data", len(self.input_data), "Data shuffle",
                        data_shuffle]
                 data_writer.writerow(row)
-        for epoch in range(1, number_of_epochs + 1):
+        for epoch in range(1, number_of_epochs):
             if self.debug:
                 print("Epoch:", epoch)
             count_data_rows = 0
@@ -262,13 +267,17 @@ class Model:
             epoch_accuracy = (1-epoch_error_rate)*100
             if epoch_accuracy > max_accuracy:
                 max_accuracy = epoch_accuracy
+                self.best_result_model = self.store_temp_model(self.hidden_layers, self.output_layer)
             print("Epoch {0} error rate:".format(epoch), "{:.16f}".format(epoch_error_rate),
                   "accuracy", "{:.2f}".format(epoch_accuracy), "%", " - Current max accuracy:", "{:.2f} %".format(max_accuracy))
             if log:
                 with open(filename, mode='a+', newline="") as log_file:
-                    data_writer = csv.writer(log_file, delimiter=',')
+                    data_writer = csv.writer(log_file, delimiter=';')
                     row = [epoch, "{:.2f}".format(epoch_accuracy), "{:.2f}".format(max_accuracy)]
                     data_writer.writerow(row)
+
+            if epoch_accuracy >= accuracy_target:
+                break
 
             # shuffle input data
             if data_shuffle:
@@ -278,17 +287,54 @@ class Model:
 
         print("Number of trainings:", count_trainings)
         print("Max accuracy:", "{:.2f} %".format(max_accuracy))
+
+        self.trained_model = self.store_temp_model(self.hidden_layers, self.output_layer)
+
+        now_date = datetime.datetime.now()
+        now_date = now_date.strftime("%d-%m-%Y_%H-%M-%S")
+
         if log:
-            now_date = datetime.datetime.now()
-            now_date = now_date.strftime("%d-%m-%Y_%H-%M-%S")
             with open(filename, mode='a+', newline="") as log_file:
-                data_writer = csv.writer(log_file, delimiter=',')
+                data_writer = csv.writer(log_file, delimiter=';')
                 row = ["End training", now_date]
                 data_writer.writerow(row)
                 row = ["Number of trainings:", count_trainings]
                 data_writer.writerow(row)
                 row = ["Max accuracy:", "{:.2f} %".format(max_accuracy)]
                 data_writer.writerow(row)
+
+        user_input = input("If You want to save model at current stage type 1\nIf You want to save model at highest "
+                           "accuracy type 2\nIf You want to save both current and best models type 3\nType anythin to "
+                           "exit\n")
+        if user_input == "1":
+            self.save_to_file(now_date, epoch_accuracy, max_accuracy, trained=True)
+        elif user_input == "2":
+            self.save_to_file(now_date, epoch_accuracy, max_accuracy, best=True)
+        elif user_input == "3":
+            self.save_to_file(now_date, epoch_accuracy, max_accuracy, trained=True, best=True)
+
+    def save_to_file(self, now_date, epoch_accuracy, max_accuracy, trained=False, best=False):
+        if trained:
+            filename = "trained_model_" + now_date + ".csv"
+            with open(filename, mode='a+', newline="") as trained_model:
+                data_writer = csv.writer(trained_model, delimiter=';')
+                data_writer.writerows(self.trained_model)
+                data_writer.writerow(["{:.2f} %".format(epoch_accuracy)])
+        if best:
+            filename = "best_model_" + now_date + ".csv"
+            with open(filename, mode='a+', newline="") as best_model:
+                data_writer = csv.writer(best_model, delimiter=';')
+                data_writer.writerows(self.best_result_model)
+                data_writer.writerow(["{:.2f} %".format(max_accuracy)])
+
+    def store_temp_model(self, hidden_layers, output_layer):
+        rows = []
+        for hidden_layer in hidden_layers:
+            for perceptron in hidden_layer:
+                rows.append([perceptron.weights, perceptron.bias])
+        for perceptron in output_layer:
+            rows.append([perceptron.weights, perceptron.bias])
+        return rows
 
     def backpropagation(self, inputs, hidden_outputs, outputs, output_errors, learning_rate):
 
@@ -476,7 +522,7 @@ class Model:
             now_date = now_date.strftime("%d-%m-%Y_%H-%M-%S")
             filename = "log_feedforward_" + now_date + ".csv"
             with open(filename, mode='w', newline="") as log_file:
-                data_writer = csv.writer(log_file, delimiter=',')
+                data_writer = csv.writer(log_file, delimiter=';')
                 row = ["Start feedforward", now_date]
                 data_writer.writerow(row)
 
@@ -532,7 +578,7 @@ class Model:
             print("Outputs", outputs, "for dataset", data_set)
             if log:
                 with open(filename, mode='a+', newline="") as log_file:
-                    data_writer = csv.writer(log_file, delimiter=',')
+                    data_writer = csv.writer(log_file, delimiter=';')
                     row = [data_set, outputs]
                     data_writer.writerow(row)
 
@@ -541,7 +587,7 @@ class Model:
             now_date = datetime.datetime.now()
             now_date = now_date.strftime("%d-%m-%Y_%H-%M-%S")
             with open(filename, mode='a+', newline="") as log_file:
-                data_writer = csv.writer(log_file, delimiter=',')
+                data_writer = csv.writer(log_file, delimiter=';')
                 row = ["End feedforward", now_date]
                 data_writer.writerow(row)
 
@@ -569,3 +615,30 @@ class Model:
             print(text)
             print("*"*len(text))
             print()
+
+    def load_model_from_file(self, file_path):
+        with open(file_path) as model_file:
+            data_reader = csv.reader(model_file, delimiter=';')
+
+            hidden_done = False
+            hidden_layers_index = 0
+            row_index = 0
+            for row in data_reader:
+                new_list = eval(row[0])
+                if hidden_done:
+                    for perceptron in self.output_layer:
+                        perceptron.set_weights(new_list)
+                        perceptron.set_bias(float(row[1]))
+                    break
+
+                else:
+                    new_list = eval(row[0])
+                    self.hidden_layers[hidden_layers_index][row_index].set_weights(new_list)
+                    self.hidden_layers[hidden_layers_index][row_index].set_bias(float(row[1]))
+                    if row_index == self.size_of_hidden_layer - 1:
+                        hidden_layers_index += 1
+                    if hidden_layers_index == self.number_of_hidden_layers:
+                        hidden_done = True
+                row_index += 1
+
+        print("Model loaded successfully")

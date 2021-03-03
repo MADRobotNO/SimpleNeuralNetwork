@@ -5,18 +5,18 @@ Requires:
 numpy
 
 Not supported:
-1. It is not possible to have different sizes for different hidden layers.
-2. There is only one activation function - sigmoid
-3. It is not possible to have different activation functions on different layers
-4. Only one target outpu supported
+1. It is not possible to have different sizes for different hidden layers  
+2. There is only one activation function - sigmoid  
+3. It is not possible to have different activation functions on different layers  
+4. Only one target output supported
 
-Neural Networ creates an input layer, hidden layers and output layer. 
+Neural Network creates an input layer, hidden layers and output layer. 
 
 The constructor for Neural Network takes following parameters:  
 size_of_input_layer - number of input nodes (or simply size of one data row)  
 size_of_hidden_layer - number of hidden layer perceptrons  
-size_of_output_layer - number of output layer perceptrons.  
-number_of_hidden_layers=1 - number of hidden layers (default 1).  
+size_of_output_layer - number of output layer perceptrons  
+number_of_hidden_layers=1 - number of hidden layers (default 1)  
 debug=False - Boolean value to toggle debugging mode (extra information is printed in the console)  
   
 Possible functions:  
