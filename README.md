@@ -20,7 +20,7 @@ number_of_hidden_layers=1 - number of hidden layers (default 1)
 debug=False - Boolean value to toggle debugging mode (extra information is printed in the console)  
   
 Possible functions:  
-train_model(input_data, targets, numer_of_epochs=1, learning_rate=0.1, data_shuffle=False, debug=False, log=False) - this function train model  
+train_model(input_data, targets, numer_of_epochs=None, learning_rate=0.1, data_shuffle=False, debug=False, log=False, accuracy_target=None) - this function train model  
 test_model(input_data, targets, debug=False, log=False) - this function is the same as feedforward but with check against target data
 feedforward(input_data, debug=False, log=False) - this is function to use trained Neural Network  
 
