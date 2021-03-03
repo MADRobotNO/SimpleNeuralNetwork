@@ -4,7 +4,6 @@ import random
 import csv
 import datetime
 
-
 class Model:
 
     debug = False
@@ -158,10 +157,13 @@ class Model:
                 row = ["Total accuracy for test:", round(total_accuracy*100, 2)]
                 data_writer.writerow(row)
 
-    def train_model(self, input_data, targets, number_of_epochs=1, learning_rate=0.1, data_shuffle=False, debug=False, log=False):
+    def train_model(self, input_data, targets, number_of_epochs=None, learning_rate=0.1, data_shuffle=False, debug=False, log=False, accuracy_target=None):
         if debug:
             self.debug = True
         self.feed_data_to_input_layer(input_data)
+
+        if accuracy_target and not number_of_epochs:
+            number_of_epochs = 99999999999999999999999999
 
         self.best_result_model = []
         self.trained_model = []
@@ -187,7 +189,7 @@ class Model:
                        self.size_of_hidden_layer, "Size of training data", len(self.input_data), "Data shuffle",
                        data_shuffle]
                 data_writer.writerow(row)
-        for epoch in range(1, number_of_epochs + 1):
+        for epoch in range(1, number_of_epochs):
             if self.debug:
                 print("Epoch:", epoch)
             count_data_rows = 0
@@ -274,6 +276,9 @@ class Model:
                     row = [epoch, "{:.2f}".format(epoch_accuracy), "{:.2f}".format(max_accuracy)]
                     data_writer.writerow(row)
 
+            if epoch_accuracy >= accuracy_target:
+                break
+
             # shuffle input data
             if data_shuffle:
                 total_data = list(zip(self.input_data, targets))
@@ -298,14 +303,24 @@ class Model:
                 row = ["Max accuracy:", "{:.2f} %".format(max_accuracy)]
                 data_writer.writerow(row)
 
-        user_input = input("If You want to save model at current stage press 1\nIf You want to save model at highest accuracy press 2\nType anythin to exit\n")
+        user_input = input("If You want to save model at current stage type 1\nIf You want to save model at highest "
+                           "accuracy type 2\nIf You want to save both current and best models type 3\nType anythin to "
+                           "exit\n")
         if user_input == "1":
+            self.save_to_file(now_date, epoch_accuracy, max_accuracy, trained=True)
+        elif user_input == "2":
+            self.save_to_file(now_date, epoch_accuracy, max_accuracy, best=True)
+        elif user_input == "3":
+            self.save_to_file(now_date, epoch_accuracy, max_accuracy, trained=True, best=True)
+
+    def save_to_file(self, now_date, epoch_accuracy, max_accuracy, trained=False, best=False):
+        if trained:
             filename = "trained_model_" + now_date + ".csv"
             with open(filename, mode='a+', newline="") as trained_model:
                 data_writer = csv.writer(trained_model, delimiter=';')
                 data_writer.writerows(self.trained_model)
                 data_writer.writerow(["{:.2f} %".format(epoch_accuracy)])
-        elif user_input == "2":
+        if best:
             filename = "best_model_" + now_date + ".csv"
             with open(filename, mode='a+', newline="") as best_model:
                 data_writer = csv.writer(best_model, delimiter=';')
@@ -614,6 +629,7 @@ class Model:
                     for perceptron in self.output_layer:
                         perceptron.set_weights(new_list)
                         perceptron.set_bias(float(row[1]))
+                    break
 
                 else:
                     new_list = eval(row[0])
@@ -624,4 +640,5 @@ class Model:
                     if hidden_layers_index == self.number_of_hidden_layers:
                         hidden_done = True
                 row_index += 1
+
         print("Model loaded successfully")
