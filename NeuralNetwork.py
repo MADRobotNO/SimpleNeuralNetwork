@@ -276,7 +276,7 @@ class Model:
                     row = [epoch, "{:.2f}".format(epoch_accuracy), "{:.2f}".format(max_accuracy)]
                     data_writer.writerow(row)
 
-            if epoch_accuracy >= accuracy_target:
+            if accuracy_target and epoch_accuracy >= accuracy_target:
                 break
 
             # shuffle input data
