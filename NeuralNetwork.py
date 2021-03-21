@@ -4,6 +4,7 @@ import random
 import csv
 import datetime
 
+
 class Model:
 
     debug = False
@@ -66,7 +67,6 @@ class Model:
                 row = ["Start test", now_date]
                 data_writer.writerow(row)
 
-
         for input_row_index, data_set in enumerate(self.input_data):
 
             hidden_outputs = []
@@ -113,11 +113,11 @@ class Model:
                     print("Bias:", node.bias)
                 output = node.generate_output_data()
                 outputs.append(output)
-                error = targets[input_row_index] - output
+                error = targets[input_row_index][node_index] - output
                 node.set_error(error)
                 if self.debug:
                     print("Output:", output)
-                    print("Target:", targets[input_row_index])
+                    print("Target:", targets[input_row_index][node_index])
                     print("Output error:", error)
                     print()
                 output_errors.append(error)
@@ -175,6 +175,7 @@ class Model:
         epoch_accuracy = 0
         max_accuracy = 0
         count_trainings = 0
+
         filename = "log_training.csv"
         if log:
             now_date = datetime.datetime.now()
@@ -189,7 +190,8 @@ class Model:
                        self.size_of_hidden_layer, "Size of training data", len(self.input_data), "Data shuffle",
                        data_shuffle]
                 data_writer.writerow(row)
-        for epoch in range(1, number_of_epochs):
+
+        for epoch in range(1, number_of_epochs+1):
             if self.debug:
                 print("Epoch:", epoch)
             count_data_rows = 0
@@ -206,6 +208,10 @@ class Model:
 
                 for layer_index, layer in enumerate(self.hidden_layers):
                     layer_hidden_outputs = []
+
+                    if self.debug:
+                        print("--Hidden layer no.", layer_index, "--\n")
+
                     for node_index, node in enumerate(layer):
 
                         if layer_index == 0:
@@ -226,9 +232,9 @@ class Model:
 
                     hidden_outputs.append(layer_hidden_outputs)
 
-                    if self.debug:
-                        print("Hidden outputs:", hidden_outputs)
-                        print("\n***Output layer***\n")
+                if self.debug:
+                    print("Hidden outputs:", hidden_outputs)
+                    print("\n***Output layer***\n")
 
                 for node_index, node in enumerate(self.output_layer):
                     node.set_input_data(hidden_outputs[self.number_of_hidden_layers-1])
@@ -239,11 +245,11 @@ class Model:
                         print("Bias:", node.bias)
                     output = node.generate_output_data()
                     outputs.append(output)
-                    error = targets[input_row_index]-output
+                    error = targets[input_row_index][node_index]-output
                     node.set_error(error)
                     if self.debug:
                         print("Output:", output)
-                        print("Target:", targets[input_row_index])
+                        print("Target:", targets[input_row_index][node_index])
                         print("Output error:", error)
                         print()
                     output_errors.append(error)
@@ -622,23 +628,33 @@ class Model:
 
             hidden_done = False
             hidden_layers_index = 0
+            hidden_nodes_index = 0
             row_index = 0
+            output_nodes_index = 0
+            all_done = False
             for row in data_reader:
+                if all_done:
+                    pass
                 new_list = eval(row[0])
                 if hidden_done:
-                    for perceptron in self.output_layer:
-                        perceptron.set_weights(new_list)
-                        perceptron.set_bias(float(row[1]))
-                    break
+                    self.output_layer[output_nodes_index].set_weights(new_list)
+                    self.output_layer[output_nodes_index].set_bias(float(row[1]))
+                    output_nodes_index += 1
+                    if output_nodes_index == self.size_of_output_layer:
+                        break
 
                 else:
-                    new_list = eval(row[0])
-                    self.hidden_layers[hidden_layers_index][row_index].set_weights(new_list)
-                    self.hidden_layers[hidden_layers_index][row_index].set_bias(float(row[1]))
-                    if row_index == self.size_of_hidden_layer - 1:
-                        hidden_layers_index += 1
-                    if hidden_layers_index == self.number_of_hidden_layers:
+                    self.hidden_layers[hidden_layers_index][hidden_nodes_index].set_weights(new_list)
+                    self.hidden_layers[hidden_layers_index][hidden_nodes_index].set_bias(float(row[1]))
+
+                    if hidden_layers_index == self.number_of_hidden_layers - 1 and hidden_nodes_index == self.size_of_hidden_layer - 1:
                         hidden_done = True
+
+                    if hidden_nodes_index == self.size_of_hidden_layer - 1:
+                        hidden_layers_index += 1
+                        hidden_nodes_index = -1
+
                 row_index += 1
+                hidden_nodes_index += 1
 
         print("Model loaded successfully")

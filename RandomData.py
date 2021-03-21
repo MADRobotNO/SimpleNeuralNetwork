@@ -49,7 +49,14 @@ class HumanRandomData:
             if random.randint(0, 1) == 1:
                 count_humans += 1
                 data_row = self.make_human_data()
-                self.targets.append(data_row[1])
+                if self.double_target:
+                    if data_row[1] == 0.0:
+                        target_row = [data_row[1], 1.0]
+                    else:
+                        target_row = [data_row[1], 0.0]
+                    self.targets.append(target_row)
+                else:
+                    self.targets.append(data_row[1])
                 self.data.append(data_row[0])
 
             # Others
@@ -59,7 +66,10 @@ class HumanRandomData:
                 while self.check_if_human(data_row[0]):
                     data_row = self.make_other_data()
                 if self.double_target:
-                    target_row = [data_row[1], data_row[1]*-1]
+                    if data_row[1][1] == 0.0:
+                        target_row = [data_row[1], 1.0]
+                    else:
+                        target_row = [data_row[1], 0.0]
                     self.targets.append(target_row)
                 else:
                     self.targets.append(data_row[1])
@@ -118,9 +128,9 @@ class HumanRandomData:
             weight = random.randint(55, 80)
             height = random.randint(173, 185)
 
-        target = 1
+        target = 1.0
 
-        return [[float(age), float(weight), float(height)], float(target)]
+        return [[float(age), float(weight), float(height)], [float(target)]]
 
     def make_other_data(self):
 
@@ -129,9 +139,9 @@ class HumanRandomData:
 
         age = random.randint(2, 90)
 
-        target = 0
+        target = 0.0
 
-        return [[float(age), float(weight), float(height)], float(target)]
+        return [[float(age), float(weight), float(height)], [float(target)]]
 
     def __str__(self):
         for i, element in enumerate(self.data):
