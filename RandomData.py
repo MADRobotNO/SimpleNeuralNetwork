@@ -51,10 +51,10 @@ class HumanRandomData:
                 data_row = self.make_human_data()
                 if self.double_target:
                     if data_row[1] == 0.0:
-                        target_row = [data_row[1], 1.0]
+                        data_row[1].append(1.0)
                     else:
-                        target_row = [data_row[1], 0.0]
-                    self.targets.append(target_row)
+                        data_row[1].append(0.0)
+                    self.targets.append(data_row[1])
                 else:
                     self.targets.append(data_row[1])
                 self.data.append(data_row[0])
@@ -66,11 +66,11 @@ class HumanRandomData:
                 while self.check_if_human(data_row[0]):
                     data_row = self.make_other_data()
                 if self.double_target:
-                    if data_row[1][1] == 0.0:
-                        target_row = [data_row[1], 1.0]
+                    if data_row[1] == 0.0:
+                        data_row[1].append(1.0)
                     else:
-                        target_row = [data_row[1], 0.0]
-                    self.targets.append(target_row)
+                        data_row[1].append(0.0)
+                    self.targets.append(data_row[1])
                 else:
                     self.targets.append(data_row[1])
                 self.data.append(data_row[0])
