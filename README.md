@@ -7,8 +7,7 @@ numpy
 Not supported:
 1. It is not possible to have different sizes for different hidden layers  
 2. There is only one activation function - sigmoid  
-3. It is not possible to have different activation functions on different layers  
-4. Only one target output supported
+3. It is not possible to have different activation functions on different layers
 
 Neural Network creates an input layer, hidden layers and output layer. 
 
