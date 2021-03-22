@@ -485,6 +485,12 @@ class Model:
         """
         return value * (1 - value)
 
+    def tanh_derivative(self, value):
+        """
+        value has to be output of tanh function
+        """
+        return 1.0 - value**2
+
     def hidden_weights(self):
         hidden_weights = []
         for layer in self.hidden_layers:

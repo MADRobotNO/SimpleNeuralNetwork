@@ -52,6 +52,9 @@ class Perceptron:
     def sigmoid(self, value):
         return 1 / (1 + np.exp(-value))
 
+    def tanh(self, value):
+        return np.tanh(value)
+
     def generate_output_data(self):
         self.calculate_input_sum()
         self.output = self.sigmoid(self.input_sum_with_bias)
